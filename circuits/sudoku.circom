@@ -1,3 +1,4 @@
+// [assignment] please copy the entire modified sudoku.circom here
 pragma circom 2.0.3;
 
 include "../node_modules/circomlib-matrix/circuits/matAdd.circom";
@@ -5,6 +6,9 @@ include "../node_modules/circomlib-matrix/circuits/matElemMul.circom";
 include "../node_modules/circomlib-matrix/circuits/matElemSum.circom";
 include "../node_modules/circomlib-matrix/circuits/matElemPow.circom";
 include "../node_modules/circomlib/circuits/poseidon.circom";
+//include "./RangeProof.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
+include "./RangeProof.circom";
 
 template sudoku() {
     signal input puzzle[9][9]; // 0  where blank
@@ -14,15 +18,31 @@ template sudoku() {
     // check whether the solution is zero everywhere the puzzle has values (to avoid trick solution)
 
     component mul = matElemMul(9,9);
-    
+    component ranger[81];
+    component ranger2 [81];
+    var co = 0;
+    var ci =0;
     for (var i=0; i<9; i++) {
         for (var j=0; j<9; j++) {
-            assert(puzzle[i][j]>=0);
-            assert(puzzle[i][j]<=9);
-            assert(solution[i][j]>=0);
-            assert(solution[i][j]<=9);
+            ranger[co] = RangeProof (32);
+            ranger[co].in1 <== puzzle[i][j];
+            ranger[co].range[0] <== 0;
+            ranger[co].range[1] <== 9;
+            ranger[co].out1 === 1;
+
+            //assert(puzzle[i][j]>=0);
+            //assert(puzzle[i][j]<=9);
+            ranger2[ci] = RangeProof (32);
+            ranger2[ci].in1 <== solution[i][j];
+            ranger2[ci].range[0] <== 0;
+            ranger2[ci].range[1] <== 9;
+            ranger2[ci].out1 === 1;
+            //assert(solution[i][j]>=0);
+            //assert(solution[i][j]<=9);
             mul.a[i][j] <== puzzle[i][j];
             mul.b[i][j] <== solution[i][j];
+            co++;
+            ci++;
         }
     }
     for (var i=0; i<9; i++) {
